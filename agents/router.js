@@ -1,35 +1,26 @@
-/**
- * JARVIS OS — Agent Router
+/*
+ * JARVIS OS - Agent Router
  * Location: agents/router.js
  */
+const IntentEngine = require('./intent_engine');
 
 class AgentRouter {
   constructor(registry) {
     this.registry = registry;
+    this.intentEngine = new IntentEngine();
   }
 
   async route(goal, context = {}) {
-    const normalizedGoal = goal.toLowerCase();
+    const detectedIntent = this.intentEngine.detectIntent(goal);
+    console.log(`[Router] Goal: "${goal}" -> Intent: "${detectedIntent.intent}" (Confidence: ${detectedIntent.confidence})`);
 
-    // Route based on goal keywords
-    if (normalizedGoal.includes('instagram') || normalizedGoal.includes('growth') || normalizedGoal.includes('grow')) {
-      return this.registry.getAgent('growth_agent');
-    }
-    
-    if (normalizedGoal.includes('client') || normalizedGoal.includes('lead') || normalizedGoal.includes('sales')) {
-      return this.registry.getAgent('lead_acquisition_agent');
+    const agent = this.registry.getAgent(detectedIntent.requiredAgent);
+    if (!agent) {
+       console.warn(`[Router] Agent not found for: ${detectedIntent.requiredAgent}, falling back to strategy agent.`);
+       return this.registry.getAgent('strategy_agent');
     }
 
-    if (normalizedGoal.includes('content') || normalizedGoal.includes('reel') || normalizedGoal.includes('post')) {
-      return this.registry.getAgent('content_agent');
-    }
-
-    if (normalizedGoal.includes('research') || normalizedGoal.includes('competitor')) {
-      return this.registry.getAgent('research_agent');
-    }
-
-    // Default fallback
-    return this.registry.getAgent('ceo_strategy_agent');
+    return agent;
   }
 }
 
